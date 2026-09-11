@@ -8,6 +8,9 @@ www/assets/css/*
 test/*
 dist/*
 
+# Arquivos usados para gerar icons e splashscreen com o capacitor-assets
+assets/* 
+
 # Dependências e logs
 node_modules/
 npm-debug.log*
