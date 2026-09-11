@@ -13,9 +13,14 @@
     <key>destination</key>
     <string>upload</string>
 
-    <!-- deixa o Xcode gerenciar certificado/perfil automaticamente via API key -->
     <key>signingStyle</key>
-    <string>automatic</string>
+    <string>manual</string>
+
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>br.ufsc.appcursinhopes</key>
+        <string>AppStore_appcursinhopes</string>
+    </dict>
 
     <key>uploadSymbols</key>
     <true/>
