@@ -1,0 +1,196 @@
+name: Release mobile – iOS (TestFlight) + Android (Google Play)
+
+# Dispara em qualquer tag no formato v1.2.3
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------
+  # iOS -> TestFlight
+  # ---------------------------------------------------------------------
+  build-ios:
+    name: iOS – build, assinatura e envio ao TestFlight
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependências do projeto
+        run: npm ci
+
+      - name: Build dos assets web
+        run: npm run build
+
+      - name: Sincronizar projeto iOS do Capacitor
+        run: npx cap sync ios
+
+      - name: Definir versão e build number a partir da tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"                     # ex: 0.0.10
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          BASE=$(( MAJOR * 1000000 + MINOR * 1000 + PATCH ))
+          OFFSET="${{ vars.IOS_BUILD_NUMBER_OFFSET || 0 }}"
+          BUILD_NUMBER=$(( BASE + OFFSET ))
+          echo "Versão: $VERSION -> build number calculado: $BUILD_NUMBER"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+
+      - name: Gravar a chave da App Store Connect API (.p8)
+        env:
+          API_KEY_CONTENT: ${{ secrets.APPSTORE_API_KEY_P8 }}
+          API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "$API_KEY_CONTENT" > "$HOME/private_keys/AuthKey_${API_KEY_ID}.p8"
+
+      - name: Detectar workspace ou project do Xcode
+        id: xcode_target
+        run: |
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            echo "flag=-workspace ios/App/App.xcworkspace" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=-project ios/App/App.xcodeproj" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Archive (xcodebuild)
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            ${{ steps.xcode_target.outputs.flag }} \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$PWD/build/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${API_KEY_ID}.p8" \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic
+
+      - name: Exportar e enviar o .ipa ao App Store Connect
+        env:
+          API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$PWD/build/App.xcarchive" \
+            -exportOptionsPlist ios/exportOptions.plist \
+            -exportPath "$PWD/build" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${API_KEY_ID}.p8" \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID"
+
+      - name: Guardar o .ipa como artefato do workflow
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-ipa
+          path: build/*.ipa
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # Android -> Google Play (faixa de teste interno)
+  # ---------------------------------------------------------------------
+  build-android:
+    name: Android – build, assinatura e envio ao Google Play
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Configurar JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Instalar dependências do projeto
+        run: npm ci
+
+      - name: Build dos assets web
+        run: npm run build
+
+      - name: Sincronizar projeto Android do Capacitor
+        run: npx cap sync android
+
+      - name: Garantir plataforma/build-tools do Android SDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Calcular versionCode e versionName a partir da tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"                     # ex: 0.0.10
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          BASE=$(( MAJOR * 1000000 + MINOR * 1000 + PATCH ))
+          OFFSET="${{ vars.ANDROID_VERSION_CODE_OFFSET || 0 }}"
+          CODE=$(( BASE + OFFSET ))
+          echo "Versão: $VERSION -> versionCode calculado: $CODE"
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Restaurar o keystore a partir do secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Garantir permissão de execução do gradlew
+        run: chmod +x android/gradlew
+
+      - name: Build do App Bundle assinado (.aab)
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew bundleRelease \
+            -PversionCode=${{ steps.version.outputs.code }} \
+            -PversionName=${{ steps.version.outputs.name }}
+
+      - name: Guardar o .aab como artefato do workflow
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          retention-days: 14
+
+      - name: Publicar no Google Play (faixa "internal")
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.SUAEMPRESA.SEUAPP # ajuste para o applicationId real
+          releaseFiles: android/app/build/outputs/bundle/release/*.aab
+          tracks: internal
+          status: completed

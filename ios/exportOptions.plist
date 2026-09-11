@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store-connect</string>
+
+    <!-- Substitua pelo seu Team ID (Apple Developer > Membership) -->
+    <key>teamID</key>
+    <string>3Y9WP3DFWC</string>
+
+    <!-- upload = já envia direto ao App Store Connect/TestFlight ao exportar -->
+    <key>destination</key>
+    <string>upload</string>
+
+    <!-- deixa o Xcode gerenciar certificado/perfil automaticamente via API key -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <key>uploadSymbols</key>
+    <true/>
+</dict>
+</plist>

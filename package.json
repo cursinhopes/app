@@ -1,0 +1,28 @@
+{
+  "name": "app-cursinhopes",
+  "version": "0.0.10",
+  "type": "module",
+  "description": "Aplicativo Cursinho PES",
+  "main": "index.js",
+  "scripts": {
+    "build": "vite build",
+    "android:debug": "npm run build && npx cap sync && cd android && ./gradlew assembleDebug",
+    "android:release": "npm run build && npx cap sync && cd android && ./gradlew bundleRelease"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/barcode-scanner": "^3.1.2",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
+    "bootstrap": "^5.3.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
+    "sass": "^1.104.0",
+    "vite": "^8.2.2"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true
+  }
+}
