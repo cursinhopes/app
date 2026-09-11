@@ -121,14 +121,6 @@ jobs:
             -authenticationKeyID "$API_KEY_ID" \
             -authenticationKeyIssuerID "$API_ISSUER_ID"
 
-      - name: Guardar o .ipa como artefato do workflow
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: app-ipa
-          path: build/*.ipa
-          retention-days: 14
-
       - name: Remover keychain temporário
         if: always()
         run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
@@ -208,14 +200,6 @@ jobs:
           ./gradlew bundleRelease \
             -PversionCode=${{ steps.version.outputs.code }} \
             -PversionName=${{ steps.version.outputs.name }}
-
-      - name: Guardar o .aab como artefato do workflow
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: app-aab
-          path: android/app/build/outputs/bundle/release/*.aab
-          retention-days: 14
 
       - name: Publicar no Google Play (faixa "internal")
         uses: r0adkll/upload-google-play@v1
