@@ -1,0 +1,58 @@
+.bg-drawn {
+  --background: url("../../assets/img/bg-draws-25.png") 0 0 / 300px auto repeat #681323;
+}
+
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 1rem;
+}
+
+.login-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  max-width: 900px;
+  width: 100%;
+  padding: 1.5rem;
+
+  /* Força a cor do texto padrão para escuro, ignorando o dark mode do app */
+  color: #212529;
+  --ion-text-color: #212529;
+
+  /* Força as cores dos inputs e labels para legibilidade no fundo branco */
+  ion-input {
+    --color: #212529;
+    --placeholder-color: #6c757d;
+    --highlight-color-focused: #b5102e; /* Aplica a cor da sua identidade visual ao focar no campo */
+  }
+}
+
+.logo-pes {
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
+.auth-form-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+
+  /* Faz os botões ocuparem espaços iguais */
+  > * {
+    flex: 1;
+  }
+}
