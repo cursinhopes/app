@@ -1,15 +1,12 @@
-www/assets/css/*
-!www/assets/css/libs/
+*:Zone.Identifier
 *.css.map
 .deploy/
 .github/.cache/
 *.log
 .vscode/
-test/*
-dist/*
-
-# Arquivos usados para gerar icons e splashscreen com o capacitor-assets
-assets/* 
+test/
+dist/
+!*.keep
 
 # Dependências e logs
 node_modules/

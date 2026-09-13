@@ -1,0 +1,7 @@
+{
+  "name": "Cursinho PES",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
