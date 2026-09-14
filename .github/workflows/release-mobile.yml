@@ -31,7 +31,7 @@ jobs:
           cache: npm
 
       - name: Instalar dependências do projeto
-        run: npm ci
+        run: npm ci --allow-git=all
 
       - name: Build dos assets web
         run: npm run build
@@ -150,7 +150,7 @@ jobs:
           java-version: '21'
 
       - name: Instalar dependências do projeto
-        run: npm ci
+        run: npm ci --allow-git=all
 
       - name: Build dos assets web
         run: npm run build

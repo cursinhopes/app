@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, use, useState, useEffect, ReactNode } from 'react';
 import { getItem, setItem, removeItem } from '../utils/storage';
 import { UserData } from '../features/auth/types';
 import { api } from '../services/api';
@@ -83,14 +83,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, nickname, roles, isLoading, signIn, signOut }}>
+    <AuthContext value={{ isAuthenticated, nickname, roles, isLoading, signIn, signOut }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = use(AuthContext);
   if (!context) throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   return context;
 };

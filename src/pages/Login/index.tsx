@@ -49,12 +49,12 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Mapeia o cpf para a propriedade user exigida pela API
       const response = await authenticate({ user: cpf, password });
       await signIn(response);
       navigate('/home', { replace: true });
-    } catch (error: any) {
-      setErrorMsg(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao efetuar login.';
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
