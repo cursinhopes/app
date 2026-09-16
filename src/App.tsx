@@ -1,10 +1,6 @@
-import { lazy, Suspense } from 'react';
-import { Navigate, Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { PrivateRoute } from './routes/PrivateRoute';
-import { ForbiddenAlert } from './components/ForbiddenAlert';
+import { IonApp, setupIonicReact } from '@ionic/react';
+import { AuthProvider } from './contexts/AuthContext';
+import { AppRouter } from './routes/AppRouter';
 
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
@@ -19,45 +15,16 @@ import '@ionic/react/css/display.css';
 import '@ionic/react/css/palettes/dark.system.css';
 import './theme/variables.scss';
 
-const Home = lazy(() => import('./pages/Home'));
-const Login = lazy(() => import('./pages/Login'));
-
 setupIonicReact();
 
-const AppRoutes: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) return null; // Previne saltos de rota enquanto o storage carrega
-
+const App: React.FC = () => {
   return (
-    <IonReactRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Suspense fallback={<div />}>
-        <IonRouterOutlet>
-          {/* Rotas Públicas */}
-          <Route path="/login" element={isAuthenticated ? <Navigate to="/home" replace /> : <Login />} />
-          
-          {/* Rotas Privadas */}
-          <Route path="/home" element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          } />
-          
-          {/* Redirecionamento Inicial */}
-          <Route path="/" element={<Navigate to={isAuthenticated ? "/home" : "/login"} replace />} />
-        </IonRouterOutlet>
-      </Suspense>
-    </IonReactRouter>
+    <IonApp>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </IonApp>
   );
 };
-
-const App: React.FC = () => (
-  <IonApp>
-    <AuthProvider>
-      <AppRoutes />
-      <ForbiddenAlert />
-    </AuthProvider>
-  </IonApp>
-);
 
 export default App;

@@ -1,0 +1,64 @@
+/* Header Principal */
+.restricted-header {
+  border-bottom: 4px solid #350a12;
+  
+  ion-toolbar {
+    --background: #681326;
+    --min-height: 60px;
+  }
+
+  .role-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 16px;
+    cursor: pointer;
+
+    .role {
+      font-weight: 700;
+      text-transform: capitalize;
+      font-size: 20px;
+    }
+  }
+}
+
+.bg-drawn {
+  --background: url("../../assets/img/bg-draws-25.png") 0 0 / 300px auto repeat #681323;
+}
+
+/* Menu de Tela Cheia */
+.fullscreen-menu {
+  .menu-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 24px 16px 16px 16px;
+  }
+
+  .menu-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    /* Isola o botão de logout no final da lista se houver espaço */
+    .logout-wrapper {
+      margin-top: auto;
+      padding-top: 24px;
+    }
+  }
+
+  .version-tag {
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffffff;
+    padding-top: 16px;
+    border-top: 4px solid #350a12;
+    margin-top: 16px;
+  }
+}

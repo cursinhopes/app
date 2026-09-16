@@ -8,6 +8,7 @@ export interface UserData {
   firstName: string;
   lastName: string;
   nickname: string;
+  type: string;
   roles: string[];
 }
 

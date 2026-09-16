@@ -1,11 +1,11 @@
 import React, { createContext, use, useState, useEffect, ReactNode } from 'react';
 import { getItem, setItem, removeItem } from '../utils/storage';
-import { UserData } from '../features/auth/types';
-import { api } from '../services/api';
+import { UserData } from '../features/auth/types'; 
 
 interface AuthContextType {
   isAuthenticated: boolean;
   nickname: string | null;
+  type: string | null;
   roles: string[];
   isLoading: boolean;
   signIn: (data: UserData) => Promise<void>;
@@ -19,11 +19,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [nickname, setNickname] = useState<string | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [type, setType] = useState<string | null>(null);
 
   // Função de logout isolada para ser reaproveitada
   const signOut = async () => {
     await removeItem('jwt_token');
     await removeItem('user_nickname');
+    await removeItem('user_type');
     await removeItem('user_roles');
     setIsAuthenticated(false);
     setNickname(null);
@@ -35,55 +37,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const loadData = async () => {
       const token = await getItem('jwt_token');
       const savedNickname = await getItem('user_nickname');
+      const savedType = await getItem('user_type');
       const savedRoles = await getItem('user_roles');
       
       if (token && savedRoles) {
         setIsAuthenticated(true);
         setNickname(savedNickname);
+        if (savedType) setType(savedType);
         setRoles(JSON.parse(savedRoles));
       }
       setIsLoading(false);
     };
+
     loadData();
 
-    // Configura o interceptor de resposta do Axios
-    const interceptorId = api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response) {
-          const status = error.response.status;
-          // Se o token for inválido (401) ou a rota for proibida (403)
-          if (status === 401) {
-            // Token expirado ou credencial inválida: Força a saída
-            signOut();
-          } else if (status === 403) {
-            // Dispara um evento global informando a falta de permissão
-            window.dispatchEvent(new CustomEvent('api-forbidden', {
-              detail: error.response.data.message || 'Sem permissão para esta ação'
-            }));
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
+    const handleUnauthorized = () => {
+      setIsAuthenticated(false);
+      setNickname(null);
+      setType(null);
+      setRoles([]);
+    };
 
-    // Limpeza: remove o interceptor quando o componente for desmontado
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
     return () => {
-      api.interceptors.response.eject(interceptorId);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
   }, []);
 
   const signIn = async (data: UserData) => {
     await setItem('jwt_token', data.token);
     await setItem('user_nickname', data.nickname);
+    await setItem('user_type', data.type);
     await setItem('user_roles', JSON.stringify(data.roles));
     setIsAuthenticated(true);
     setNickname(data.nickname);
+    setType(data.type);
     setRoles(data.roles);
   };
 
   return (
-    <AuthContext value={{ isAuthenticated, nickname, roles, isLoading, signIn, signOut }}>
+    <AuthContext value={{ isAuthenticated, nickname, type, roles, isLoading, signIn, signOut }}>
       {children}
     </AuthContext>
   );

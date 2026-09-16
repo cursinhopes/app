@@ -1,17 +1,22 @@
+import axios from 'axios';
+import { api } from '../../../services/api';
 import { LoginCredentials, UserData, AuthErrorResponse, AuthSuccessResponse } from '../types';
 
 export const authenticate = async (credentials: LoginCredentials): Promise<UserData> => {
-  const response = await fetch('https://pes.ufsc.br/app/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials),
-  });
+  try {
+    
+    const response = await api.post<AuthSuccessResponse>('/login', credentials);
 
-  if (!response.ok) {
-    const errorData: AuthErrorResponse = await response.json();
-    throw new Error(errorData.message || 'Erro na requisição.');
+    return response.data.data;
+
+  } catch (error: unknown) {
+
+    if (axios.isAxiosError<AuthErrorResponse>(error)) {
+      if (error.response && error.response.data) {
+        throw new Error(error.response.data.message || 'Erro na requisição.', { cause: error });
+      }
+    }
+    
+    throw new Error('Erro de conexão com o servidor.', { cause: error });
   }
-
-  const responseData: AuthSuccessResponse = await response.json();
-  return responseData.data;
 };
